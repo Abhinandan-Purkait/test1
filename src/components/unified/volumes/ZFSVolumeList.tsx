@@ -1,0 +1,51 @@
+import React from 'react';
+import { SectionBox, ResourceListView } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { Box } from '@mui/material';
+import { zfsVolumeClass } from '../../../resources/zfsvolume';
+
+export function ZfsVolumeList() {
+  const ZfsVolume = React.useMemo(() => zfsVolumeClass(), []);
+
+  const columns = [
+    'name',
+    {
+      id: 'namespace',
+      label: 'Namespace',
+      getValue: (item: any) => item.metadata?.namespace ?? '-',
+    },
+    {
+      id: 'capacity',
+      label: 'Capacity',
+      getValue: (item: any) => item.spec?.capacity ?? '-',
+    },
+    {
+      id: 'poolName',
+      label: 'Pool',
+      getValue: (item: any) => item.spec?.poolName ?? '-',
+    },
+    {
+      id: 'fsType',
+      label: 'FS Type',
+      getValue: (item: any) => item.spec?.fsType ?? '-',
+    },
+    {
+      id: 'state',
+      label: 'State',
+      getValue: (item: any) => item.status?.state ?? '-',
+    },
+    'age',
+  ];
+
+  return (
+    <Box sx={{ mt: 2 }}>
+      <SectionBox>
+        <ResourceListView
+          title="ZFS Volumes"
+          resourceClass={ZfsVolume as any}
+          columns={columns as any}
+          headerProps={{ titleSideActions: [] }}
+        />
+      </SectionBox>
+    </Box>
+  );
+}
