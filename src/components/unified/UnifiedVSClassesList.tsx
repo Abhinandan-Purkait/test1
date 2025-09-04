@@ -2,11 +2,7 @@ import { ResourceListView, SectionBox } from '@kinvolk/headlamp-plugin/lib/Commo
 import { Box } from '@mui/material';
 import React from 'react';
 import { volumeSnapshotClassClass } from '../../resources/volumesnapshotclass';
-import {
-  LVM_PROVISIONER,
-  MAYASTOR_PROVISIONER,
-  ZFS_PROVISIONER,
-} from '../utils/constants';
+import { LVM_PROVISIONER, MAYASTOR_PROVISIONER, ZFS_PROVISIONER } from '../utils/constants';
 import { StorageSelector, useStorageEngine } from './StorageEngineSelector';
 
 export function UnifiedVolumeSnapshotClassesList() {
@@ -38,7 +34,9 @@ export function UnifiedVolumeSnapshotClassesList() {
       label: 'Default',
       getValue: (item: any) => {
         const annotations = item.metadata?.annotations || {};
-        return annotations['snapshot.storage.kubernetes.io/is-default-class'] === 'true' ? 'Yes' : 'No';
+        return annotations['snapshot.storage.kubernetes.io/is-default-class'] === 'true'
+          ? 'Yes'
+          : 'No';
       },
     },
     'age',
@@ -46,7 +44,7 @@ export function UnifiedVolumeSnapshotClassesList() {
 
   const getFilterFunction = () => {
     let provisionerList: string[] = [];
-    
+
     switch (selectedEngine) {
       case 'mayastor':
         provisionerList = MAYASTOR_PROVISIONER;
@@ -61,9 +59,7 @@ export function UnifiedVolumeSnapshotClassesList() {
 
     return (vsc: any) => {
       const driver = vsc.jsonData.driver || '';
-      return provisionerList.some(allowed => 
-        driver.toLowerCase().includes(allowed.toLowerCase())
-      );
+      return provisionerList.some(allowed => driver.toLowerCase().includes(allowed.toLowerCase()));
     };
   };
 

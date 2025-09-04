@@ -8,7 +8,7 @@ import {
   MAYASTOR_DAEMONSET_LABEL,
   ZFS_NODE_DAEMONSET_LABEL,
 } from '../utils/constants';
-import { createNodeFilter, useDaemonSetNodes } from '../utils/helpers';
+import { createNodeFilter, useDaemonSetNodes } from '../utils/filterCreator';
 import { StorageSelector, useStorageEngine } from './StorageEngineSelector';
 
 export function UnifiedNodesList() {
@@ -62,9 +62,9 @@ export function UnifiedNodesList() {
     {
       id: 'allocatable-hugepages',
       label: 'Allocatable Hugepages',
-      getValue: (item: any) => 
-        item.status?.allocatable?.['hugepages-2Mi'] || 
-        item.status?.allocatable?.['hugepages-1Gi'] || 
+      getValue: (item: any) =>
+        item.status?.allocatable?.['hugepages-2Mi'] ||
+        item.status?.allocatable?.['hugepages-1Gi'] ||
         '-',
     },
     'age',

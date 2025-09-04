@@ -1,4 +1,8 @@
-import { DetailsGrid, NameValueTable, SectionBox } from '@kinvolk/headlamp-plugin/lib/components/common';
+import {
+  DetailsGrid,
+  NameValueTable,
+  SectionBox,
+} from '@kinvolk/headlamp-plugin/lib/components/common';
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { volumeSnapshotClassClass } from '../../resources/volumesnapshotclass';
@@ -19,7 +23,9 @@ export function VolumeSnapshotClassDetail() {
           ]
         }
         extraSections={item =>
-          item && item.jsonData.parameters && Object.keys(item.jsonData.parameters).length > 0 && [
+          item &&
+          item.jsonData.parameters &&
+          Object.keys(item.jsonData.parameters).length > 0 && [
             {
               id: 'parameters',
               section: (

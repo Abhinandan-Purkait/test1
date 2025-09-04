@@ -23,11 +23,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Make script executable
-        run: chmod +x scripts/release.sh
-
-      - name: Build and package with script
-        run: ./scripts/release.sh release --release-dir "${RELEASE_DIR}"
+      - name: Build and package with script without and without logo
+        run: |
+          ./scripts/release.sh release --release-dir "${RELEASE_DIR}"
+          ./scripts/release.sh release --enable-dc-logo --release-dir "${RELEASE_DIR}"
 
       - name: Upload assets to the GitHub Release
         uses: softprops/action-gh-release@v2

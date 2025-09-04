@@ -1,18 +1,28 @@
-import { Box, Button, Paper, Table, TableBody, TableCell, TableRow, Typography, Chip, Grid, Card, CardContent, LinearProgress } from '@mui/material';
+import {
+  Box,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { zfsNodeClass } from '../../../resources/zfsnode';
-
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
+import { formatIBytes, sumFormatIBytes } from '../../utils/humanize_size';
+import { CapacityGaugeTrio } from '../../utils/CapacityGauge';
 
 export function ZFSPoolDetail() {
-  const { namespace, node: nodeName, pool: poolName } = useParams<{ namespace: string; node: string; pool: string }>();
+  const {
+    namespace,
+    node: nodeName,
+    pool: poolName,
+  } = useParams<{ namespace: string; node: string; pool: string }>();
   const [poolData, setPoolData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +50,7 @@ export function ZFSPoolDetail() {
       (err: any) => {
         setError(`Error loading node: ${err?.message || 'Unknown error'}`);
         setLoading(false);
-      }
+      },
     );
 
     const unsubscribePromise = fetchNode();
@@ -75,76 +85,34 @@ export function ZFSPoolDetail() {
     );
   }
 
-  const freeBytes = parseInt(poolData.free || '0');
-  const usedBytes = parseInt(poolData.used || '0');
-  const totalBytes = freeBytes + usedBytes;
-  const usagePercent = totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : 0;
+  const freeBytes = formatIBytes(poolData.free);
+  const usedBytes = formatIBytes(poolData.used);
+  const sizeBytes = sumFormatIBytes([freeBytes, usedBytes]);
 
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 3 }}>
-        <Button
-          onClick={() => history.goBack()}
-          sx={{ mb: 2 }}
-          variant="text"
-        >
+        <Button onClick={() => history.goBack()} sx={{ mb: 2 }} variant="text">
           ← Back
         </Button>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
           <Typography variant="h4" sx={{ fontWeight: 500 }}>
             ZFS Pool: {poolName}
           </Typography>
         </Box>
-        
+
         <Typography color="text.secondary">
           Node: {nodeName} • Namespace: {namespace}
         </Typography>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Total Capacity
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 500 }}>
-                {formatBytes(totalBytes)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Used Space
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 500 }}>
-                {formatBytes(usedBytes)}({usagePercent}% of total)
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Available Space
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 500 }}>
-                {formatBytes(freeBytes)}({100 - usagePercent}% remaining)
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <CapacityGaugeTrio title="" total={sizeBytes} used={usedBytes} free={freeBytes} />
 
       <Paper sx={{ overflow: 'hidden' }}>
-        <Box sx={{ p: 2, backgroundColor: 'action.hover', borderBottom: 1, borderColor: 'divider' }}>
+        <Box
+          sx={{ p: 2, backgroundColor: 'action.hover', borderBottom: 1, borderColor: 'divider' }}
+        >
           <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
             Pool Details
           </Typography>
@@ -173,23 +141,15 @@ export function ZFSPoolDetail() {
             </TableRow>
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>Free Space</TableCell>
-              <TableCell>{formatBytes(freeBytes)}</TableCell>
+              <TableCell>{freeBytes}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>Used Space</TableCell>
-              <TableCell>{formatBytes(usedBytes)}</TableCell>
+              <TableCell>{usedBytes}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell sx={{ fontWeight: 500 }}>Total Size</TableCell>
-              <TableCell>{formatBytes(totalBytes)}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 500 }}>Usage Percentage</TableCell>
-              <TableCell>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography>{usagePercent}%</Typography>
-                </Box>
-              </TableCell>
+              <TableCell>{sizeBytes}</TableCell>
             </TableRow>
           </TableBody>
         </Table>

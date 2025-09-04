@@ -1,0 +1,22 @@
+headlamp:
+  enabled: true
+  config:
+    pluginsDir: "/headlamp/plugins"
+
+  initContainers:
+    - name: puls8-plugin
+      image: docker.io/abhinandanpurkait/plugin:latest
+      imagePullPolicy: Always
+      command: ["/bin/sh", "-c"]
+      args: ["cp -r /plugins/* /headlamp/plugins/ && ls -l /headlamp/plugins"]
+      volumeMounts:
+        - name: plugins-dir
+          mountPath: /headlamp/plugins
+
+  volumeMounts:
+    - name: plugins-dir
+      mountPath: /headlamp/plugins
+
+  volumes:
+    - name: plugins-dir
+      emptyDir: {}

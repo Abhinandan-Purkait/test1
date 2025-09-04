@@ -1,0 +1,12 @@
+apiVersion: v2
+name: puls8-headlamp
+description: Wrapper chart that deploys Headlamp and installs a plugin via initContainer.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+dependencies:
+  - name: headlamp
+    version: 0.35.0
+    repository: https://kubernetes-sigs.github.io/headlamp/
+    condition: headlamp.enabled

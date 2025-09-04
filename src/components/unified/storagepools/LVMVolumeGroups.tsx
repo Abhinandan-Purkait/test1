@@ -1,7 +1,18 @@
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { lvmNodeClass } from '../../../resources/lvmnode';
+import { toBytesSafe, formatIBytes } from '../../utils/humanize_size';
 
 interface VolumeGroup {
   name: string;
@@ -15,33 +26,6 @@ interface VolumeGroup {
   usagePercent: number;
   uuid: string;
 }
-
-const parseSize = (size: string): number => {
-  const match = size.match(/(\d+)(\w+)/);
-  if (!match) return 0;
-  const num = parseInt(match[1]);
-  const unit = match[2].toLowerCase();
-  if (unit === 'b') return num;
-  if (unit === 'ki' || unit === 'kib') return num * 1024;
-  if (unit === 'mi' || unit === 'mib') return num * 1024 * 1024;
-  if (unit === 'gi' || unit === 'gib') return num * 1024 * 1024 * 1024;
-  if (unit === 'ti' || unit === 'tib') return num * 1024 * 1024 * 1024 * 1024;
-  return 0;
-};
-
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-const getUsageColor = (percent: number): string => {
-  if (percent > 80) return 'error';
-  if (percent > 60) return 'warning';
-  return 'success';
-};
 
 export function LVMVolumeGroups() {
   const [volumeGroups, setVolumeGroups] = useState<VolumeGroup[]>([]);
@@ -59,12 +43,13 @@ export function LVMVolumeGroups() {
             const nodeName = node?.metadata?.name || 'unknown';
             const namespace = node?.metadata?.namespace || 'default';
 
-            let vgsData = node?.volumeGroups || node?.jsonData?.volumeGroups || node?.spec?.volumeGroups || [];
+            let vgsData =
+              node?.volumeGroups || node?.jsonData?.volumeGroups || node?.spec?.volumeGroups || [];
 
             if (vgsData && Array.isArray(vgsData)) {
               vgsData.forEach((vg: any) => {
-                const freeBytes = parseSize(vg?.free || '0');
-                const sizeBytes = parseSize(vg?.size || '0');
+                const freeBytes = toBytesSafe(vg?.free || '0');
+                const sizeBytes = toBytesSafe(vg?.size || '0');
                 const usedBytes = sizeBytes - freeBytes;
                 const usagePercent = sizeBytes > 0 ? Math.round((usedBytes / sizeBytes) * 100) : 0;
 
@@ -72,13 +57,13 @@ export function LVMVolumeGroups() {
                   name: vg?.name || 'unnamed',
                   node: nodeName,
                   namespace: namespace,
-                  free: formatBytes(freeBytes),
-                  size: formatBytes(sizeBytes),
+                  free: formatIBytes(freeBytes),
+                  size: formatIBytes(sizeBytes),
                   freeBytes: freeBytes,
                   sizeBytes: sizeBytes,
                   usedBytes: usedBytes,
                   usagePercent: usagePercent,
-                  uuid: vg?.uuid || 'no-uuid'
+                  uuid: vg?.uuid || 'no-uuid',
                 });
               });
             }
@@ -94,17 +79,19 @@ export function LVMVolumeGroups() {
       (err: any) => {
         setError(`API error: ${err?.message || err}`);
         setLoading(false);
-      }
+      },
     );
 
     const unsubscribePromise = fetchVolumeGroups();
 
     return () => {
-      unsubscribePromise.then((unsubscribe: any) => {
-        if (unsubscribe && typeof unsubscribe === 'function') {
-          unsubscribe();
-        }
-      }).catch(() => { });
+      unsubscribePromise
+        .then((unsubscribe: any) => {
+          if (unsubscribe && typeof unsubscribe === 'function') {
+            unsubscribe();
+          }
+        })
+        .catch(() => {});
     };
   }, []);
 
@@ -139,22 +126,34 @@ export function LVMVolumeGroups() {
 
   return (
     <Box>
-      <Box sx={{ mb: 8, mt: 2, ml: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Box
+        sx={{
+          mb: 8,
+          mt: 2,
+          ml: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <Typography variant="h5" sx={{ fontWeight: 800 }}>
           LVM Volume Groups
         </Typography>
       </Box>
 
       <TableContainer component={Paper} sx={{ borderRadius: 1, ml: 2 }}>
-        <Table size="small" sx={{
-          '& thead tr': {
-            backgroundColor: '#faf9f8c0',
-          },
-          '& thead th': {
-            color: '#333',
-            fontWeight: 'bold',
-          },
-        }}>
+        <Table
+          size="small"
+          sx={{
+            '& thead tr': {
+              backgroundColor: '#faf9f8c0',
+            },
+            '& thead th': {
+              color: '#333',
+              fontWeight: 'bold',
+            },
+          }}
+        >
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 600 }}>Volume Group Name</TableCell>
@@ -187,7 +186,7 @@ export function LVMVolumeGroups() {
                 <TableCell>{vg.node}</TableCell>
                 <TableCell>{vg.namespace}</TableCell>
                 <TableCell>{vg.size}</TableCell>
-                <TableCell>{formatBytes(vg.usedBytes)}</TableCell>
+                <TableCell>{formatIBytes(vg.usedBytes)}</TableCell>
                 <TableCell>{vg.free}</TableCell>
               </TableRow>
             ))}

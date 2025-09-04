@@ -20,6 +20,7 @@ set -euo pipefail
 #   --dist DIR
 #   --install-deps              Run "npm install" before "npm run build" in build step.
 #   --release-dir DIR           Directory to copy packaged artifacts into (for 'release').
+#   --enable-dc-logo            Enable brand logo during build/package (sets VITE_ENABLE_DC_LOGO=true)
 
 # -----------------------------
 # Defaults
@@ -28,6 +29,7 @@ PLUGIN_NAME="${PLUGIN_NAME:-puls8}"
 DIST_DIR="${DIST_DIR:-dist}"
 RELEASE_DIR="${RELEASE_DIR:-releases}"
 INSTALL_DEPS="false"
+ENABLE_DC_LOGO="false"
 
 # -----------------------------
 # Helpers
@@ -55,7 +57,7 @@ normalize_path() {
 # -----------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-SRC_DIR="$WORKSPACE_DIR/src"
+SRC_DIR="$WORKSPACE_DIR"  # Changed from $WORKSPACE_DIR/src since package.json is at root
 PKG_JSON="$WORKSPACE_DIR/package.json"
 DIST_PATH="$WORKSPACE_DIR/$DIST_DIR"
 MAIN_JS="$DIST_PATH/main.js"
@@ -79,13 +81,15 @@ while [[ $# -gt 0 ]]; do
     --release-dir)
       [[ $# -gt 1 ]] || { err "Missing value for --release-dir"; exit 1; }
       RELEASE_DIR="$2"; shift 2 ;;
+    --enable-dc-logo)
+      ENABLE_DC_LOGO="true"; shift ;;
     -h|--help)
       cat <<EOF
-Usage: $0 [build] [install] [release] [--plugin-name NAME] [--dist DIR] [--install-deps] [--release-dir DIR]
+Usage: $0 [build] [install] [release] [--plugin-name NAME] [--dist DIR] [--install-deps] [--release-dir DIR] [--enable-dc-logo]
 
 Subcommands:
-  build                npm run build in src (optionally npm install first)
-  install              Copy DIST/main.js and package.json into Headlamp user plugins dir
+  build                npm run build in workspace (optionally npm install first)
+  install              Copy dist/main.js and package.json into Headlamp user plugins dir
   release              npm install, npm run build, npm run package; copy package(s) to release dir
 
 Flags:
@@ -93,11 +97,12 @@ Flags:
   --dist DIR           Dist directory under workspace (default: $DIST_DIR)
   --install-deps       Run npm install before build (applies to 'build')
   --release-dir DIR    Output directory for packaged artifacts (default: $RELEASE_DIR)
+  --enable-dc-logo     Enable brand logo during build/package (sets VITE_ENABLE_DC_LOGO=true)
 
 Examples:
   $0 build --install-deps
   $0 install --plugin-name puls8 --dist dist
-  $0 release --release-dir releases
+  $0 release --release-dir releases --enable-dc-logo
   $0 build install --plugin-name myplug
 EOF
       exit 0 ;;
@@ -117,14 +122,26 @@ fi
 do_build() {
   log "Workspace: $WORKSPACE_DIR"
   log "Source:    $SRC_DIR"
+  
   if [[ "$INSTALL_DEPS" == "true" ]]; then
     log "Installing deps: npm install"
     ( cd "$SRC_DIR" && npm install )
   else
     log "Skipping npm install (use --install-deps to enable)"
   fi
-  log "Building: npm run build"
-  ( cd "$SRC_DIR" && npm run build )
+  
+  # Determine which build command to use based on ENABLE_DC_LOGO
+  local build_cmd
+  if [[ "$ENABLE_DC_LOGO" == "true" ]]; then
+    log "Building with DC logo enabled (VITE_ENABLE_DC_LOGO=true)"
+    build_cmd="npm run build:with-logo"
+  else
+    log "Building without DC logo (VITE_ENABLE_DC_LOGO=false)"
+    build_cmd="npm run build"
+  fi
+  
+  ( cd "$SRC_DIR" && $build_cmd )
+  
   if [[ ! -f "$MAIN_JS" ]]; then
     err "Build completed but main.js not found at $MAIN_JS (DIST_DIR=$DIST_DIR)."
     exit 1
@@ -180,6 +197,8 @@ do_install() {
     sudo cp -f "$PKG_JSON" "$mac_dir/package.json" || true
     log "Mirrored to: $mac_dir"
   fi
+  
+  log "Done."
 }
 
 # -----------------------------
@@ -190,30 +209,62 @@ do_install() {
 do_release() {
   log "Release: ensuring dependencies"
   ( cd "$SRC_DIR" && npm install )
-  log "Release: building"
-  ( cd "$SRC_DIR" && npm run build )
+  
+  # Build with appropriate logo setting
+  local build_cmd
+  if [[ "$ENABLE_DC_LOGO" == "true" ]]; then
+    log "Release: building with DC logo enabled"
+    build_cmd="npm run build:with-logo"
+  else
+    log "Release: building without DC logo"
+    build_cmd="npm run build"
+  fi
+  
+  ( cd "$SRC_DIR" && $build_cmd )
+  
   if [[ ! -f "$MAIN_JS" ]]; then
     err "Build completed but main.js not found at $MAIN_JS (DIST_DIR=$DIST_DIR)."
     exit 1
   fi
-  log "Release: packaging (npm run package)"
-  ( cd "$SRC_DIR" && npm run package )
+  
+  # Release with appropriate logo setting
+  local release_cmd
+  if [[ "$ENABLE_DC_LOGO" == "true" ]]; then
+    log "Release: releasing with DC logo enabled"
+    release_cmd="npm run package:with-logo"
+  else
+    log "Release: releasing without DC logo"
+    release_cmd="npm run package"
+  fi
+
+  ( cd "$SRC_DIR" && $release_cmd )
 
   # Collect artifacts: common patterns
   mkdir -p "$WORKSPACE_DIR/$RELEASE_DIR"
   shopt -s nullglob
-  # Prefer artifacts placed by headlamp-plugin's packaging (often under src or workspace)
+  
+  # Look for package artifacts
   pkg_candidates=()
-  while IFS= read -r -d '' f; do pkg_candidates+=("$f"); done < <(find "$WORKSPACE_DIR" -maxdepth 2 -type f \( -name "*.tar.gz" \) -print0)
+  while IFS= read -r -d '' f; do 
+    pkg_candidates+=("$f")
+  done < <(find "$WORKSPACE_DIR/temp" -maxdepth 2 -type f \( -name "*.tar.gz" -o -name "*.tgz" \) -print0)
 
   if [[ ${#pkg_candidates[@]} -eq 0 ]]; then
     log "No package artifacts found automatically. Check your npm run package output."
   else
     for f in "${pkg_candidates[@]}"; do
-      mv -f "$f" "$WORKSPACE_DIR/$RELEASE_DIR/"
-      log "Copied artifact: $(basename "$f") -> $RELEASE_DIR/"
+      local basename="$(basename "$f")"
+      # Add suffix to indicate if logo was enabled
+      if [[ "$ENABLE_DC_LOGO" == "true" ]]; then
+        basename="${basename%.tar.gz}-with-logo.tar.gz"
+      fi
+      mv -f "$f" "$WORKSPACE_DIR/$RELEASE_DIR/$basename"
+      log "Copied artifact: $(basename "$f") -> $RELEASE_DIR/$basename"
     done
   fi
+
+  rm -rf "$WORKSPACE_DIR/temp"
+  
   log "Release completed. Output dir: $WORKSPACE_DIR/$RELEASE_DIR"
 }
 
@@ -229,4 +280,4 @@ for cmd in "${SUBCOMMANDS[@]}"; do
   esac
 done
 
-log "Done."
+log "All operations completed successfully."

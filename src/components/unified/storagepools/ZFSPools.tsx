@@ -1,7 +1,19 @@
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { Box, Chip, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { zfsNodeClass } from '../../../resources/zfsnode';
+import { formatIBytes } from '../../utils/humanize_size';
 
 interface ZPool {
   name: string;
@@ -16,20 +28,6 @@ interface ZPool {
   usagePercent: number;
   uuid: string;
 }
-
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-const getUsageColor = (percent: number): string => {
-  if (percent > 80) return 'error';
-  if (percent > 60) return 'warning';
-  return 'success';
-};
 
 export function ZFSPools() {
   const [pools, setPools] = useState<ZPool[]>([]);
@@ -55,20 +53,21 @@ export function ZFSPools() {
                 const freeBytes = parseInt(pool?.free || '0');
                 const usedBytes = parseInt(pool?.used || '0');
                 const totalBytes = freeBytes + usedBytes;
-                const usagePercent = totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : 0;
+                const usagePercent =
+                  totalBytes > 0 ? Math.round((usedBytes / totalBytes) * 100) : 0;
 
                 allPools.push({
                   name: pool?.name || 'unnamed',
                   node: nodeName,
                   namespace: namespace,
-                  free: formatBytes(freeBytes),
-                  used: formatBytes(usedBytes),
-                  total: formatBytes(totalBytes),
+                  free: formatIBytes(freeBytes),
+                  used: formatIBytes(usedBytes),
+                  total: formatIBytes(totalBytes),
                   freeBytes: freeBytes,
                   usedBytes: usedBytes,
                   totalBytes: totalBytes,
                   usagePercent: usagePercent,
-                  uuid: pool?.uuid || 'no-uuid'
+                  uuid: pool?.uuid || 'no-uuid',
                 });
               });
             }
@@ -84,17 +83,19 @@ export function ZFSPools() {
       (err: any) => {
         setError(`API error: ${err?.message || err}`);
         setLoading(false);
-      }
+      },
     );
 
     const unsubscribePromise = fetchZFSNodes();
 
     return () => {
-      unsubscribePromise.then((unsubscribe: any) => {
-        if (unsubscribe && typeof unsubscribe === 'function') {
-          unsubscribe();
-        }
-      }).catch(() => { });
+      unsubscribePromise
+        .then((unsubscribe: any) => {
+          if (unsubscribe && typeof unsubscribe === 'function') {
+            unsubscribe();
+          }
+        })
+        .catch(() => {});
     };
   }, []);
 
@@ -129,22 +130,34 @@ export function ZFSPools() {
 
   return (
     <Box>
-      <Box sx={{ mb: 8, mt: 2, ml: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Box
+        sx={{
+          mb: 8,
+          mt: 2,
+          ml: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <Typography variant="h5" sx={{ fontWeight: 800 }}>
           ZFS Pools
         </Typography>
       </Box>
 
       <TableContainer component={Paper} sx={{ borderRadius: 1, ml: 2 }}>
-        <Table size="small" sx={{
-          '& thead tr': {
-            backgroundColor: '#faf9f8c0',
-          },
-          '& thead th': {
-            color: '#333',
-            fontWeight: 'bold',
-          },
-        }}>
+        <Table
+          size="small"
+          sx={{
+            '& thead tr': {
+              backgroundColor: '#faf9f8c0',
+            },
+            '& thead th': {
+              color: '#333',
+              fontWeight: 'bold',
+            },
+          }}
+        >
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 600 }}>Pool Name</TableCell>

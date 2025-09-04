@@ -4,9 +4,13 @@ import { StorageSelector, useStorageEngine } from '../StorageEngineSelector';
 import { MayastorPVList } from './MayastorPVList';
 import { LvmVolumeList } from './LVMVolumeList';
 import { ZfsVolumeList } from './ZFSVolumeList';
+import { HostpathPVList } from './HostpathPVList';
 
 export function UnifiedVolumes() {
-  const [selectedEngine, setSelectedEngine] = useStorageEngine('mayastor');
+  const [selectedEngine, setSelectedEngine] =useStorageEngine({
+    defaultEngine: 'mayastor',
+    variants: ['mayastor', 'lvm', 'zfs', 'hostpath'],
+  });
 
   return (
     <Box sx={{ p: 3 }}>
@@ -15,10 +19,12 @@ export function UnifiedVolumes() {
         onChange={setSelectedEngine}
         title=""
         description=""
+        variants={['mayastor', 'lvm', 'zfs', 'hostpath']}
       />
       {selectedEngine === 'mayastor' && <MayastorPVList />}
       {selectedEngine === 'lvm' && <LvmVolumeList />}
       {selectedEngine === 'zfs' && <ZfsVolumeList />}
+      {selectedEngine === 'hostpath' && <HostpathPVList />}
     </Box>
   );
 }

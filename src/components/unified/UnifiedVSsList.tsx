@@ -3,11 +3,7 @@ import { Box } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { volumeSnapshotClass } from '../../resources/volumesnapshot';
 import { volumeSnapshotClassClass } from '../../resources/volumesnapshotclass';
-import {
-  LVM_PROVISIONER,
-  MAYASTOR_PROVISIONER,
-  ZFS_PROVISIONER,
-} from '../utils/constants';
+import { LVM_PROVISIONER, MAYASTOR_PROVISIONER, ZFS_PROVISIONER } from '../utils/constants';
 import { StorageSelector, useStorageEngine } from './StorageEngineSelector';
 
 export function UnifiedVolumeSnapshotsList() {
@@ -30,18 +26,22 @@ export function UnifiedVolumeSnapshotsList() {
   useEffect(() => {
     const SnapshotClassCls = volumeSnapshotClassClass();
     const fetchClasses = SnapshotClassCls.apiList(
-      (classes) => {
+      classes => {
         const provisionerList = getCurrentProvisionerList();
-        const valid = classes.filter(c => {
-          const driver = c.jsonData.driver || '';
-          return provisionerList.some(allowed => driver.toLowerCase().includes(allowed.toLowerCase()));
-        }).map(c => c.jsonData.metadata.name);
+        const valid = classes
+          .filter(c => {
+            const driver = c.jsonData.driver || '';
+            return provisionerList.some(allowed =>
+              driver.toLowerCase().includes(allowed.toLowerCase()),
+            );
+          })
+          .map(c => c.jsonData.metadata.name);
         setValidClasses(valid);
       },
-      (err) => {
+      err => {
         console.error('Error fetching VolumeSnapshotClasses:', err);
         setValidClasses([]);
-      }
+      },
     );
     const unsubscribePromise = fetchClasses();
     return () => {
@@ -57,7 +57,7 @@ export function UnifiedVolumeSnapshotsList() {
     {
       id: 'readyToUse',
       label: 'Ready',
-      getValue: (item: any) => item.jsonData.status?.readyToUse ? 'Yes' : 'No',
+      getValue: (item: any) => (item.jsonData.status?.readyToUse ? 'Yes' : 'No'),
     },
     {
       id: 'sourcePVC',
@@ -113,7 +113,9 @@ export function UnifiedVolumeSnapshotsList() {
           <ResourceListView
             title={getTitle()}
             resourceClass={volumeSnapshotClass()}
-            filterFunction={(vs: any) => validClasses.includes(vs.jsonData.spec?.volumeSnapshotClassName)}
+            filterFunction={(vs: any) =>
+              validClasses.includes(vs.jsonData.spec?.volumeSnapshotClassName)
+            }
             columns={columns as any}
           />
         </SectionBox>

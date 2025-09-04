@@ -1,7 +1,9 @@
 import { SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Box } from '@mui/material';
 import React from 'react';
-import { LVMVolumeGroups, MayastorDiskPools, ZFSPools } from './storagepools';
+import { LVMVolumeGroups } from './storagepools/LVMVolumeGroups';
+import { MayastorDiskPools } from './storagepools/MayastorDiskPools';
+import { ZFSPools } from './storagepools/ZFSPools';
 import { StorageSelector, useStorageEngine } from './StorageEngineSelector';
 
 export function UnifiedStoragePools() {
@@ -30,9 +32,7 @@ export function UnifiedStoragePools() {
       />
 
       <Box sx={{ mt: 2 }}>
-        <SectionBox>
-          {renderPoolComponent()}
-        </SectionBox>
+        <SectionBox>{renderPoolComponent()}</SectionBox>
       </Box>
     </Box>
   );

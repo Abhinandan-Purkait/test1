@@ -1,6 +1,5 @@
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
 import { UnifiedNodesList } from './components/unified/UnifiedNodeList';
-import { UnifiedPVCsList } from './components/unified/UnifiedPVCsList';
 import { UnifiedVolumes } from './components/unified/volumes/UnifiedVolumes';
 import { LVMVolumeDetails } from './components/unified/volumes/LVMVolumeDetails';
 import { ZFSVolumeDetails } from './components/unified/volumes/ZFSVolmeDetails';
@@ -13,11 +12,21 @@ import { ZFSPoolDetail } from './components/unified/storagepools/ZFSPoolDetail';
 import { DiskPoolDetail } from './components/unified/storagepools/MayastorDiskPoolDetail';
 import { VolumeSnapshotDetail } from './components/unified/VSDetail';
 import { VolumeSnapshotClassDetail } from './components/unified/VSClassDetail';
+import { UnifiedPVCsList } from './components/unified/UnifiedPVCsList';
+import { registerDCLogo } from './assets/DCLogo';
+import { registerDCIcon } from './assets/DCArrowIcon';
+
+registerDCIcon();
+
+// Conditionally register DCLogo based on build flag
+if (import.meta.env.VITE_ENABLE_DC_LOGO === 'true') {
+  registerDCLogo();
+}
 
 registerSidebarEntry({
   name: 'Puls8',
   url: '/puls8/nodes',
-  icon: 'mdi:pulse',
+  icon: 'dc:arrow-icon',
   parent: null,
   label: 'Puls8',
 });
@@ -72,7 +81,7 @@ registerSidebarEntry({
   name: 'puls8-storage-pools',
   url: '/puls8/storage-pools',
   parent: 'Puls8',
-  label: 'Storage Pools'
+  label: 'Storage Pools',
 });
 
 registerRoute({
@@ -108,7 +117,7 @@ registerRoute({
 });
 
 registerSidebarEntry({
-  name: 'puls8-pvcs',
+  name: 'puls8pvcs',
   url: '/puls8/pvcs',
   parent: 'Puls8',
   label: 'Persistent Volume Claims',
@@ -116,8 +125,8 @@ registerSidebarEntry({
 
 registerRoute({
   path: '/puls8/pvcs',
-  sidebar: 'puls8-pvcs',
-  name: 'puls8-pvcs',
+  sidebar: 'puls8pvcs',
+  name: 'puls8pvcs',
   component: UnifiedPVCsList,
   exact: true,
 });
@@ -126,7 +135,7 @@ registerSidebarEntry({
   name: 'puls8-scs',
   url: '/puls8/scs',
   parent: 'Puls8',
-  label: 'Storage Classes'
+  label: 'Storage Classes',
 });
 
 registerRoute({
@@ -141,7 +150,7 @@ registerSidebarEntry({
   name: 'puls8-vcs',
   url: '/puls8/vcs',
   parent: 'Puls8',
-  label: 'Volume Snapshot'
+  label: 'Volume Snapshot',
 });
 
 registerRoute({
@@ -164,7 +173,7 @@ registerSidebarEntry({
   name: 'puls8-vsclass',
   url: '/puls8/vsclass',
   parent: 'Puls8',
-  label: 'Volume Snapshot Class'
+  label: 'Volume Snapshot Class',
 });
 
 registerRoute({

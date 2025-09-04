@@ -16,14 +16,17 @@ export function VolumeSnapshotDetail() {
         extraInfo={item =>
           item && [
             { name: 'Ready to Use', value: item.jsonData.status?.readyToUse ? 'Yes' : 'No' },
-            { name: 'Source PVC', value: item.jsonData.spec?.source?.persistentVolumeClaimName || '-' },
+            {
+              name: 'Source PVC',
+              value: item.jsonData.spec?.source?.persistentVolumeClaimName || '-',
+            },
             { name: 'Restore Size', value: item.jsonData.status?.restoreSize || '-' },
             { name: 'Snapshot Class', value: item.jsonData.spec?.volumeSnapshotClassName || '-' },
-            { 
-              name: 'Creation Time', 
-              value: item.jsonData.status?.creationTime 
-                ? new Date(item.jsonData.status.creationTime).toLocaleString() 
-                : '-' 
+            {
+              name: 'Creation Time',
+              value: item.jsonData.status?.creationTime
+                ? new Date(item.jsonData.status.creationTime).toLocaleString()
+                : '-',
             },
           ]
         }

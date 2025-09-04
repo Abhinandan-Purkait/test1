@@ -2,15 +2,14 @@ import { ResourceListView, SectionBox } from '@kinvolk/headlamp-plugin/lib/Commo
 import PersistentVolumeClaim from '@kinvolk/headlamp-plugin/lib/k8s/persistentVolumeClaim';
 import { Box } from '@mui/material';
 import React from 'react';
-import {
-  LVM_PROVISIONER,
-  MAYASTOR_PROVISIONER,
-  ZFS_PROVISIONER,
-} from '../utils/constants';
+import { LVM_PROVISIONER, MAYASTOR_PROVISIONER, ZFS_PROVISIONER, HOSTPATH_PROVISIONER } from '../utils/constants';
 import { StorageSelector, useStorageEngine } from './StorageEngineSelector';
 
 export function UnifiedPVCsList() {
-  const [selectedEngine, setSelectedEngine] = useStorageEngine('mayastor');
+  const [selectedEngine, setSelectedEngine] = useStorageEngine({
+    defaultEngine: 'mayastor',
+    variants: ['mayastor', 'lvm', 'zfs', 'hostpath'],
+  });
 
   const columns = [
     'name',
@@ -28,7 +27,8 @@ export function UnifiedPVCsList() {
     {
       id: 'capacity',
       label: 'Capacity',
-      getValue: (item: any) => item.status?.capacity?.storage || item.spec?.resources?.requests?.storage || '-',
+      getValue: (item: any) =>
+        item.status?.capacity?.storage || item.spec?.resources?.requests?.storage || '-',
     },
     {
       id: 'accessModes',
@@ -36,10 +36,10 @@ export function UnifiedPVCsList() {
       getValue: (item: any) => {
         const modes = item.spec?.accessModes || [];
         const modeMap: { [key: string]: string } = {
-          'ReadWriteOnce': 'RWO',
-          'ReadOnlyMany': 'ROX',
-          'ReadWriteMany': 'RWX',
-          'ReadWriteOncePod': 'RWOP',
+          ReadWriteOnce: 'RWO',
+          ReadOnlyMany: 'ROX',
+          ReadWriteMany: 'RWX',
+          ReadWriteOncePod: 'RWOP',
         };
         return modes.map((mode: string) => modeMap[mode] || mode).join(', ') || '-';
       },
@@ -54,8 +54,10 @@ export function UnifiedPVCsList() {
       label: 'Provisioner',
       getValue: (item: any) => {
         const annotations = item.metadata?.annotations || {};
-        const provisioner = annotations['volume.kubernetes.io/storage-provisioner'] || 
-                          annotations['volume.beta.kubernetes.io/storage-provisioner'] || '-';
+        const provisioner =
+          annotations['volume.kubernetes.io/storage-provisioner'] ||
+          annotations['volume.beta.kubernetes.io/storage-provisioner'] ||
+          '-';
         return provisioner.split('/').slice(0, 2).join('/') || provisioner;
       },
     },
@@ -64,7 +66,7 @@ export function UnifiedPVCsList() {
 
   const getFilterFunction = () => {
     let provisionerList: string[] = [];
-    
+
     switch (selectedEngine) {
       case 'mayastor':
         provisionerList = MAYASTOR_PROVISIONER;
@@ -75,14 +77,19 @@ export function UnifiedPVCsList() {
       case 'zfs':
         provisionerList = ZFS_PROVISIONER;
         break;
+      case 'hostpath':
+        provisionerList = HOSTPATH_PROVISIONER;
+        break;
     }
 
     return (pvc: any) => {
       const annotations = pvc.metadata?.annotations || {};
-      const provisioner = annotations['volume.kubernetes.io/storage-provisioner'] || 
-                        annotations['volume.beta.kubernetes.io/storage-provisioner'] || '';
-      return provisionerList.some(allowed => 
-        provisioner.toLowerCase().includes(allowed.toLowerCase())
+      const provisioner =
+        annotations['volume.kubernetes.io/storage-provisioner'] ||
+        annotations['volume.beta.kubernetes.io/storage-provisioner'] ||
+        '';
+      return provisionerList.some(allowed =>
+        provisioner.toLowerCase().includes(allowed.toLowerCase()),
       );
     };
   };
@@ -95,6 +102,8 @@ export function UnifiedPVCsList() {
         return 'LVM Persistent Volume Claims';
       case 'zfs':
         return 'ZFS Persistent Volume Claims';
+      case 'hostpath':
+        return 'Hostpath Persistent Volume Claims';
       default:
         return 'Persistent Volume Claims';
     }
@@ -107,6 +116,7 @@ export function UnifiedPVCsList() {
         onChange={setSelectedEngine}
         title=""
         description=""
+        variants={['mayastor', 'lvm', 'zfs', 'hostpath']}
       />
 
       <Box sx={{ mt: 2 }}>

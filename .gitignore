@@ -1,5 +1,9 @@
 **/node_modules/
-**/package-lock.json
 **/dist/
 **/release/
 **/artifacts/
+**/.DS_Store
+
+# Helm chart
+charts/Chart.lock
+/charts/charts/*

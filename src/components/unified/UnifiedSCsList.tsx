@@ -2,15 +2,14 @@ import { ResourceListView, SectionBox } from '@kinvolk/headlamp-plugin/lib/Commo
 import StorageClass from '@kinvolk/headlamp-plugin/lib/k8s/storageClass';
 import { Box } from '@mui/material';
 import React from 'react';
-import {
-  LVM_PROVISIONER,
-  MAYASTOR_PROVISIONER,
-  ZFS_PROVISIONER,
-} from '../utils/constants';
+import { LVM_PROVISIONER, MAYASTOR_PROVISIONER, ZFS_PROVISIONER, HOSTPATH_PROVISIONER } from '../utils/constants';
 import { StorageSelector, useStorageEngine } from './StorageEngineSelector';
 
 export function UnifiedStorageClassesList() {
-  const [selectedEngine, setSelectedEngine] = useStorageEngine('mayastor');
+  const [selectedEngine, setSelectedEngine] = useStorageEngine({
+    defaultEngine: 'mayastor',
+    variants: ['mayastor', 'lvm', 'zfs', 'hostpath'],
+  });
 
   const columns = [
     'name',
@@ -32,7 +31,7 @@ export function UnifiedStorageClassesList() {
     {
       id: 'allowVolumeExpansion',
       label: 'Allow Expansion',
-      getValue: (item: any) => item.allowVolumeExpansion ? 'Yes' : 'No',
+      getValue: (item: any) => (item.allowVolumeExpansion ? 'Yes' : 'No'),
     },
     {
       id: 'default',
@@ -47,7 +46,7 @@ export function UnifiedStorageClassesList() {
 
   const getFilterFunction = () => {
     let provisionerList: string[] = [];
-    
+
     switch (selectedEngine) {
       case 'mayastor':
         provisionerList = MAYASTOR_PROVISIONER;
@@ -58,12 +57,15 @@ export function UnifiedStorageClassesList() {
       case 'zfs':
         provisionerList = ZFS_PROVISIONER;
         break;
+      case 'hostpath':
+        provisionerList = HOSTPATH_PROVISIONER;
+        break;
     }
 
     return (sc: any) => {
       const provisioner = sc.provisioner || '';
-      return provisionerList.some(allowed => 
-        provisioner.toLowerCase().includes(allowed.toLowerCase())
+      return provisionerList.some(allowed =>
+        provisioner.toLowerCase().includes(allowed.toLowerCase()),
       );
     };
   };
@@ -76,6 +78,8 @@ export function UnifiedStorageClassesList() {
         return 'LVM Storage Classes';
       case 'zfs':
         return 'ZFS Storage Classes';
+      case 'hostpath':
+        return 'Hostpath Storage Classes';
       default:
         return 'Storage Classes';
     }
@@ -88,6 +92,7 @@ export function UnifiedStorageClassesList() {
         onChange={setSelectedEngine}
         title=""
         description=""
+        variants={['mayastor', 'lvm', 'zfs', 'hostpath']}
       />
 
       <Box sx={{ mt: 2 }}>

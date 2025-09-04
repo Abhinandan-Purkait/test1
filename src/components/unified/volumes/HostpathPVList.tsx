@@ -8,10 +8,10 @@ import { Box } from '@mui/material';
 import PersistentVolume from '@kinvolk/headlamp-plugin/lib/k8s/persistentVolume';
 import PersistentVolumeClaim from '@kinvolk/headlamp-plugin/lib/k8s/persistentVolumeClaim';
 import Namespace from '@kinvolk/headlamp-plugin/lib/k8s/namespace';
-import { MAYASTOR_PROVISIONER } from '../../utils/constants';
+import { HOSTPATH_PROVISIONER } from '../../utils/constants';
 import { formatIBytes } from '../../utils/humanize_size';
 
-export function MayastorPVList() {
+export function HostpathPVList() {
   const columns = [
     {
       id: 'claim',
@@ -84,7 +84,7 @@ export function MayastorPVList() {
     const ann = pv.metadata?.annotations || {};
     const provisioner = ann['pv.kubernetes.io/provisioned-by'] || '';
     const csiDriver = pv.spec?.csi?.driver || '';
-    return MAYASTOR_PROVISIONER.some(
+    return HOSTPATH_PROVISIONER.some(
       allowed =>
         provisioner.toLowerCase().includes(allowed.toLowerCase()) ||
         csiDriver.toLowerCase().includes(allowed.toLowerCase()),
@@ -95,7 +95,7 @@ export function MayastorPVList() {
     <Box sx={{ mt: 2 }}>
       <SectionBox>
         <ResourceListView
-          title="Mayastor Persistent Volumes"
+          title="Hostpath Persistent Volumes"
           resourceClass={PersistentVolume}
           columns={columns as any}
           filterFunction={filterFunction}
